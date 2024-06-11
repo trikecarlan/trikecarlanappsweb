@@ -1,10 +1,13 @@
 "use client"
-import { getDatabase, onValue, ref } from "firebase/database";
+import { child, get, getDatabase, onValue, ref } from "firebase/database";
 import Link from "next/link"
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { IoIosNotificationsOutline } from "react-icons/io";
 import { usePathname, useRouter } from "next/navigation";
+import { signOut } from "@/lib/auth";
+import { onAuthStateChanged } from "firebase/auth";
+import { app, auth } from "../../firebaseConfig";
 
 interface ILayout {
     children: React.ReactNode;
@@ -13,23 +16,30 @@ interface ILayout {
 
 const Layout = ({ children, title }: ILayout) => {
     const pathName = usePathname()
+    const dbRef = ref(getDatabase(app));
     const router = useRouter()
     const [user, setUser] = useState<any>()
 
-    useEffect(() => {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
+    const seeIfLogedIn = () => onAuthStateChanged(auth, (user) => {
+        if (user) {
+            getOnce(user.uid)
         } else {
             router.push("/")
         }
+    });
+
+    useEffect(() => {
+        seeIfLogedIn()
     }, [])
 
-    const handleLogout = () => {
-        setUser(null);
-        localStorage.removeItem("user");  // Remove user data from localStorage
-        router.push("/")
-    };
+    const getOnce = (uid: string) => get(child(dbRef, `users/${uid}`)).then((snapshot) => {
+        if (snapshot.exists()) {
+            setUser(snapshot.val())
+        }
+    }).catch((error) => {
+        console.log(error);
+    });
+
 
     return (
         <>
@@ -51,7 +61,7 @@ const Layout = ({ children, title }: ILayout) => {
                         <Link className={`${pathName === "/analytics" ? "border-b-2 border-b-gray-50 w-max" : ""} text-xl text-gray-50`} href="/analytics">
                             Analytics
                         </Link>
-                        <button className={`text-xl text-start text-gray-50`} onClick={handleLogout}>
+                        <button className={`text-xl text-start text-gray-50`} onClick={signOut}>
                             Logout
                         </button>
                     </div>

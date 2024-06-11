@@ -1,13 +1,15 @@
 "use client"
 
 import Layout from "@/components/Layout";
-import { getDatabase, onValue, ref } from "firebase/database";
+import { getDatabase, onValue, ref, set } from "firebase/database";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { app } from "../../../firebaseConfig";
+import { app, auth } from "../../../firebaseConfig";
 import { IoIosNotificationsOutline } from "react-icons/io";
 import { FaPlus } from "react-icons/fa";
 import Image from "next/image";
+import { IoClose } from "react-icons/io5";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
 interface User {
     address: string;
@@ -29,6 +31,17 @@ interface User {
 const Reports = () => {
     const database = getDatabase(app);
     const [users, setUsers] = useState<{ [key: string]: User }>({});
+    const [openModal, setopenModal] = useState<boolean>(false);
+    const [password, setPassword] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [fName, setFName] = useState('');
+    const [lName, setLname] = useState('');
+    const [address, setAddress] = useState('');
+    const [sideCartNumber, setSideCartNumber] = useState('');
+    const [email, setEmail] = useState('');
+    const [birthday, setbirthDay] = useState('');
+    const [gender, setgender] = useState('');
+    const [toda, setToda] = useState('');
 
     const userRef = ref(database, 'users/');
     useEffect(() => {
@@ -48,10 +61,64 @@ const Reports = () => {
         Drivers: Object.entries(users).filter(([key, user]) => user.role === 'driver'),
         AdminUsers: Object.entries(users).filter(([key, user]) => user.role === 'superadmin' || user.role === 'admin') // Modified filter logic
     };
+    const handleSubmit = async (e: any) => {
+        e.preventDefault();
+        try {
+
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            if (user) {
+                try {
+                    await set(ref(database, 'users/' + user.uid), {
+                        email: email,
+                        firstName: fName,
+                        lastName: lName,
+                        phoneNumber: phoneNumber,
+                        sideCartNumber: sideCartNumber,
+                        birthDay: birthday,
+                        gender: gender,
+                        address: address,
+                        role: 'driver',
+                        toda: toda
+                    });
+                } catch (err) {
+                    alert("Failed to add user.")
+                }
+            }
+
+        } catch (error) {
+            console.error('Error creating user:', error);
+        }
+    };
 
     return (
         <Layout title="Users">
             <div className="p-4 w-[100%]">
+                {openModal &&
+                    <div className="absolute top-20 left-0 w-full flex justify-center">
+                        <div className="w-1/2 relative bg-gray-200 rounded-lg">
+                            <button className="rounded-full absolute -right-2 -top-2 p-1 bg-orange-600" onClick={() => setopenModal(!openModal)}>
+                                <IoClose className=" text-white" />
+                            </button>
+                            <form onSubmit={handleSubmit} className="flex flex-col justify-center items-center gap-4 m-10">
+                                <h2 className="text-xl font-semibold">Add User</h2>
+                                <input
+                                    className="w-3/4 px-2 py-1 border rounded-lg"
+                                    placeholder="Side Cart No."
+                                    required
+                                />
+                                <input
+                                    className="w-3/4 px-2 py-1 border rounded-lg"
+                                    placeholder="Email"
+                                    type="email"
+                                    required
+                                />
+                                <button type="submit" className="bg-orange-600 w-3/4 px-4 rounded-lg py-2">Submit</button>
+                            </form>
+                        </div>
+                    </div>
+                }
                 <div className="flex justify-between">
                     <nav className="flex gap-6">
                         {Object.keys(tabs).map(tab => (
@@ -64,11 +131,12 @@ const Reports = () => {
                             </button>
                         ))}
                     </nav>
-                    {selectedTab !== 'Users' && <button
-                        className="bg-orange-600 flex gap-2 items-center py-1 px-4 rounded-lg text-white">
-                        Add
-                        <FaPlus />
-                    </button>}
+                    {selectedTab !== 'Users' &&
+                        <button onClick={() => setopenModal(!openModal)}
+                            className="bg-orange-600 flex gap-2 items-center py-1 px-4 rounded-lg text-white">
+                            Add
+                            <FaPlus />
+                        </button>}
                 </div>
                 {selectedTab === 'AdminUsers' ?
                     <div>

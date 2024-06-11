@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import { IoPersonSharp } from "react-icons/io5";
 import { RiLockPasswordLine } from "react-icons/ri";
 import { GoEye, GoEyeClosed } from "react-icons/go";
-import { signInWithEmailAndPassword, UserCredential } from "firebase/auth";
+import { onAuthStateChanged, signInWithEmailAndPassword, UserCredential } from "firebase/auth";
 import { child, get, getDatabase, ref } from "firebase/database";
 import AuthLayout from "@/components/AuthLayout";
 import { app, auth } from "../../firebaseConfig";
 import { useRouter } from "next/navigation";
+import { signIn } from "@/lib/auth";
 
 export default function Home() {
   const [email, setEmail] = useState<string>("");
@@ -18,25 +19,22 @@ export default function Home() {
   const dbRef = ref(getDatabase(app));
   const router = useRouter()
 
-  useEffect(() => {
-    // Check if user data is stored in localStorage
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      console.log(storedUser)
-      setUser(JSON.parse(storedUser));
+  const seeIfLogedIn = () => onAuthStateChanged(auth, (user) => {
+    if (user) {
+      console.log(user)
       router.push("/main")
     }
+  });
+
+  useEffect(() => {
+    seeIfLogedIn()
   }, []);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const userCredential: UserCredential = await signInWithEmailAndPassword(auth, email, password);
-      const snapshot = await get(child(dbRef, `/users/${userCredential.user.uid}`));
-      if (snapshot.exists()) {
-        const userData = snapshot.val();
-        setUser(userData);
-        localStorage.setItem("user", JSON.stringify(userData));  // Persist user data in localStorage
+      const loggedIn = await signIn(email, password);
+      if (loggedIn) {
         router.push("/main")
       }
     } catch (error) {
