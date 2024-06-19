@@ -1,7 +1,7 @@
 "use client";
 
 import Layout from "@/components/Layout";
-import { getDatabase, onValue, ref, update } from "firebase/database";
+import { getDatabase, onValue, ref, update, remove } from "firebase/database";
 import { useEffect, useState } from "react";
 import { app } from "../../../firebaseConfig";
 
@@ -64,6 +64,30 @@ const Reports = () => {
             })
             .catch((error) => {
                 console.error("Error updating report status: ", error);
+            });
+    };
+
+    const deleteReport = (reportKey: string, userKey: string, entryKey: string) => {
+        const reportRef = ref(database, `reports/${reportKey}/${userKey}/${entryKey}`);
+        remove(reportRef)
+            .then(() => {
+                setReports((prevReports) => {
+                    if (prevReports) {
+                        const updatedReports = { ...prevReports };
+                        delete updatedReports[reportKey][userKey][entryKey];
+                        if (Object.keys(updatedReports[reportKey][userKey]).length === 0) {
+                            delete updatedReports[reportKey][userKey];
+                        }
+                        if (Object.keys(updatedReports[reportKey]).length === 0) {
+                            delete updatedReports[reportKey];
+                        }
+                        return updatedReports;
+                    }
+                    return prevReports;
+                });
+            })
+            .catch((error) => {
+                console.error("Error deleting report: ", error);
             });
     };
 
@@ -140,6 +164,7 @@ const Reports = () => {
                         ) : (
                             <button className="bg-purple-500 h-max text-white px-3 py-1 rounded">Print</button>
                         )}
+                        <button onClick={() => deleteReport(reportKey, userKey, entryKey)} className="bg-red-500 h-max text-white px-3 py-1 rounded">Delete</button>
                     </div>
                 </div>
             </div>
@@ -148,8 +173,8 @@ const Reports = () => {
 
     return (
         <Layout title="Reports">
-            <div className="p-4 overflow-auto bg-gray-200 h-[100vh]">
-                <div className="flex flex-wrap sticky top-0 justify-between items-center mb-4">
+            <div className="overflow-auto bg-gray-200 h-[100vh]">
+                <div className="flex flex-wrap p-4 bg-gray-300 sticky top-0 justify-between items-center mb-4">
                     <div className="flex gap-2">
                         <button className={`${statusSort === "All" ? "bg-white" : ""} px-2 rounded-lg`} onClick={() => handleStatusSort("All")}>All</button>
                         <button className={`${statusSort === "Pending" ? "bg-white" : ""} px-2 rounded-lg`} onClick={() => handleStatusSort("Pending")}>Pending</button>
@@ -178,7 +203,7 @@ const Reports = () => {
                         className="border-2 px-2 rounded-lg"
                     />
                 </div>
-                <div>
+                <div className="p-4">
                     {renderReports()}
                 </div>
             </div>

@@ -9,7 +9,8 @@ import { child, get, getDatabase, ref } from "firebase/database";
 import AuthLayout from "@/components/AuthLayout";
 import { app, auth } from "../../firebaseConfig";
 import { useRouter } from "next/navigation";
-import { signIn } from "@/lib/auth";
+import { signIn, signOut } from "@/lib/auth";
+import Link from "next/link";
 
 export default function Home() {
   const [email, setEmail] = useState<string>("");
@@ -19,23 +20,30 @@ export default function Home() {
   const dbRef = ref(getDatabase(app));
   const router = useRouter()
 
-  const seeIfLogedIn = () => onAuthStateChanged(auth, (user) => {
-    if (user) {
-      console.log(user)
-      router.push("/main")
-    }
-  });
+  // const seeIfLogedIn = () => onAuthStateChanged(auth, (user) => {
+  //   if (user) {
+  //     router.push("/main")
+  //   }
+  // });
 
-  useEffect(() => {
-    seeIfLogedIn()
-  }, []);
+  // useEffect(() => {
+  //   seeIfLogedIn()
+  // }, []);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const loggedIn = await signIn(email, password);
       if (loggedIn) {
-        router.push("/main")
+        const snapshot = await get(child(dbRef, `/users/${loggedIn.user.uid}`));
+        if (snapshot.exists()) {
+          if (snapshot.val().role === "admin") {
+            router.push("/main")
+          } else {
+            alert("You do not have permission to login to this page.")
+            signOut()
+          }
+        }
       }
     } catch (error) {
       alert("Failed to login. Please check your email or password")
@@ -77,7 +85,7 @@ export default function Home() {
               )}
             </div>
             <div className="w-full flex justify-end">
-              <button type="button">Forgot password?</button>
+              <Link href="/forgotPassword">Forgot password?</Link>
             </div>
             <button type="submit" className="bg-orange-600 text-center text-white rounded-lg py-1">Login</button>
           </form>

@@ -10,6 +10,7 @@ import { FaPlus } from "react-icons/fa";
 import Image from "next/image";
 import { IoClose } from "react-icons/io5";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import admin from 'firebase-admin';
 
 interface User {
     address: string;
@@ -131,7 +132,7 @@ const Reports = () => {
                             </button>
                         ))}
                     </nav>
-                    {selectedTab !== 'Users' &&
+                    {selectedTab === 'Drivers' &&
                         <button onClick={() => setopenModal(!openModal)}
                             className="bg-orange-600 flex gap-2 items-center py-1 px-4 rounded-lg text-white">
                             Add
