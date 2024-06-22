@@ -38,7 +38,7 @@ const Reports = () => {
             },
             datalabels: {
                 color: '#0000',
-                formatter: (value, context) => {
+                formatter: (value: any, context: any) => {
                     const label = context.chart.data.labels[context.dataIndex];
                     return `${label} ${value}%`;
                 },
@@ -113,7 +113,7 @@ const Reports = () => {
                                     key={index}
                                     className={`absolute inset-0 rounded-full ${segment.color}`}
                                     style={{
-                                        clipPath: `polygon(50% 50%, ${50 + 50 * Math.cos(2 * Math.PI * index / data.length)}% ${50 + 50 * Math.sin(2 * Math.PI * index / data.length)}%, ${50 + 50 * Math.cos(2 * Math.PI * (index + 1) / data.length)}% ${50 + 50 * Math.sin(2 * Math.PI * (index + 1) / data.length)}%)`,
+                                        clipPath: `polygon(50% 50%, ${50 + 50 * Math.cos(2 * Math.PI * index / data.datasets.length)}% ${50 + 50 * Math.sin(2 * Math.PI * index / data.datasets.length)}%, ${50 + 50 * Math.cos(2 * Math.PI * (index + 1) / data.datasets.length)}% ${50 + 50 * Math.sin(2 * Math.PI * (index + 1) / data.datasets.length)}%)`,
                                     }}
                                 ></div>
                             ))}

@@ -1,7 +1,7 @@
 "use client"
 
 import Layout from "@/components/Layout";
-import { getDatabase, onValue, ref, set } from "firebase/database";
+import { Database, getDatabase, onValue, ref, remove, set } from "firebase/database";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { app, auth } from "../../../firebaseConfig";
@@ -9,8 +9,8 @@ import { IoIosNotificationsOutline } from "react-icons/io";
 import { FaPlus } from "react-icons/fa";
 import Image from "next/image";
 import { IoClose } from "react-icons/io5";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import admin from 'firebase-admin';
+import { createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import { getFormattedDate } from "@/lib/getDateNow";
 
 interface User {
     address: string;
@@ -26,8 +26,10 @@ interface User {
     role: 'user' | 'driver' | 'superadmin' | 'admin';
     sideCartNumber?: string;
     toda?: string;
-    joined?: string;
+    joined: string;
+    uid: string;
 }
+
 
 const Reports = () => {
     const database = getDatabase(app);
@@ -43,6 +45,7 @@ const Reports = () => {
     const [birthday, setbirthDay] = useState('');
     const [gender, setgender] = useState('');
     const [toda, setToda] = useState('');
+
 
     const userRef = ref(database, 'users/');
     useEffect(() => {
@@ -66,8 +69,9 @@ const Reports = () => {
         e.preventDefault();
         try {
 
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const userCredential = await createUserWithEmailAndPassword(auth, email, "12345678");
             const user = userCredential.user;
+            // await sendPasswordResetEmail(auth, email);
 
             if (user) {
                 try {
@@ -81,8 +85,11 @@ const Reports = () => {
                         gender: gender,
                         address: address,
                         role: 'driver',
-                        toda: toda
+                        toda: toda,
+                        uid: user.uid,
                     });
+                    alert("Successfully added user.")
+                    setopenModal(!openModal)
                 } catch (err) {
                     alert("Failed to add user.")
                 }
@@ -92,6 +99,13 @@ const Reports = () => {
             console.error('Error creating user:', error);
         }
     };
+
+
+    const deleteUser = async (userData: User) => {
+        const dbRef = ref(database, `users/${userData.uid}`);
+        await remove(dbRef);
+        alert("Deleted")
+    }
 
     return (
         <Layout title="Users">
@@ -107,11 +121,13 @@ const Reports = () => {
                                 <input
                                     className="w-3/4 px-2 py-1 border rounded-lg"
                                     placeholder="Side Cart No."
+                                    onChange={(e) => setSideCartNumber(e.target.value)}
                                     required
                                 />
                                 <input
                                     className="w-3/4 px-2 py-1 border rounded-lg"
                                     placeholder="Email"
+                                    onChange={(e) => setEmail(e.target.value)}
                                     type="email"
                                     required
                                 />
@@ -170,6 +186,7 @@ const Reports = () => {
                                 {selectedTab === 'Drivers' && <th className="border-2 border-gray-300">TODO</th>}
                                 <th className="border-2 border-gray-300">Number</th>
                                 <th className="border-2 border-gray-300">Address</th>
+                                <th className="border-2 border-gray-300">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -181,6 +198,11 @@ const Reports = () => {
                                     {selectedTab === 'Drivers' && <td className="border-2 text-center">{item.toda}</td>}
                                     <td className="border-2 text-center">{item.phoneNumber}</td>
                                     <td className="border-2 text-center">{item.address}</td>
+                                    <td className="border-2 flex justify-center border-gray-300">
+                                        <button className="px-2 bg-red-600 text-slate-200 rounded-lg" onClick={() => deleteUser(item)}>
+                                            Delete
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
