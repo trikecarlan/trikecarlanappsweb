@@ -22,7 +22,6 @@ export default function Home() {
 
   // const seeIfLogedIn = () => onAuthStateChanged(auth, (user) => {
   //   if (user) {
-  
   //     router.push("/main")
   //   }
   // });
